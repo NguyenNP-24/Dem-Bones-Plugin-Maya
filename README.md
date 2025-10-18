@@ -21,15 +21,5 @@ This plugin builds `.mll` files for multiple Maya versions (2018–2025), allowi
 3. All installed plugin files and settings will be completely removed.
 
 ---
+<img width="1054" height="631" alt="image" src="https://github.com/user-attachments/assets/c68e72b2-1ef1-42aa-baa0-0376ae9d6a59" />
 
-## 🧠 Notes
-
-- Based on the open-source **DemBones** algorithm by *Electronic Arts / Disney Research*.  
-- Supports building `.mll` plugins for multiple Maya versions.  
-- Ideal for converting simulation or baked vertex animations into clean skeletal motion.
-
----
-
-### 🔗 Source Reference
-
-[https://github.com/electronicarts/dem-bones](https://github.com/electronicarts/dem-bones)
