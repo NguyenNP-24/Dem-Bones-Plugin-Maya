@@ -8,8 +8,8 @@ Installs for ALL Maya versions (2018-2025)
 import os
 import shutil
 import sys
-import maya.cmds as cmds # type: ignore
-import maya.mel as mel # type: ignore
+import maya.cmds as cmds
+import maya.mel as mel
 
 
 class DemBonesInstaller:
@@ -18,28 +18,23 @@ class DemBonesInstaller:
     PLUGIN_NAME = "DemBones.mll"
     ICON_NAME = "icon.png"
     SHELF_NAME = "CustomTools"
+    PLUGINS_DIR = "outputMll"
     
     def __init__(self):
-        # Get installer directory
         self.installer_dir = os.path.dirname(__file__)
-        self.plugin_source = os.path.join(self.installer_dir, self.PLUGIN_NAME)
+        self.plugins_dir = os.path.join(self.installer_dir, self.PLUGINS_DIR)
         self.tool_source = os.path.join(self.installer_dir, self.TOOL_NAME)
         self.icon_source = os.path.join(self.installer_dir, self.ICON_NAME)
-        
-        # Get Maya documents directory
         self.maya_docs = os.path.expanduser("~/Documents/maya")
     
     def install(self):
-        """Run complete installation"""
         print("\n" + "=" * 70)
         print("  DEM BONES MAYA TOOL - INSTALLER")
         print("=" * 70)
         
-        # Validate source files
         if not self._validate_sources():
             return False
         
-        # Install for all Maya versions
         versions = self._find_maya_versions()
         if not versions:
             print("\n[ERROR] No Maya versions found in: " + self.maya_docs)
@@ -50,11 +45,8 @@ class DemBonesInstaller:
         for version in versions:
             self._install_for_version(version)
         
-        # Create shelf button in current Maya session
         self._create_shelf_button()
-        self._refresh_ui()
-        
-
+        self._load_plugin_in_current_session()
         
         print("\n" + "=" * 70)
         print("  ✅ INSTALLATION COMPLETED SUCCESSFULLY!")
@@ -67,16 +59,22 @@ class DemBonesInstaller:
         return True
     
     def _validate_sources(self):
-        """Validate source files exist"""
         errors = []
         
-        if not os.path.exists(self.plugin_source):
-            errors.append("Missing: " + self.PLUGIN_NAME)
+        if not os.path.exists(self.plugins_dir):
+            errors.append("Missing plugins folder: " + self.PLUGINS_DIR)
+        else:
+            mll_files = [f for f in os.listdir(self.plugins_dir) if f.endswith('.mll')]
+            if not mll_files:
+                errors.append("No .mll files found in: " + self.PLUGINS_DIR)
+            else:
+                print("\nFound plugin files:")
+                for mll in sorted(mll_files):
+                    print("  • " + mll)
         
         if not os.path.exists(self.tool_source):
             errors.append("Missing folder: " + self.TOOL_NAME)
         
-        # Icon is optional - just warn if missing
         if not os.path.exists(self.icon_source):
             print("\n[WARNING] Icon file not found: " + self.ICON_NAME)
             print("  Button will use default icon")
@@ -85,22 +83,16 @@ class DemBonesInstaller:
             print("\n[ERROR] Installation failed!")
             for error in errors:
                 print("  • " + error)
-            print("\nMake sure these files are in the same directory as install.py:")
-            print("  • " + self.PLUGIN_NAME)
-            print("  • " + self.TOOL_NAME + "/ (folder)")
-            print("  • " + self.ICON_NAME + " (optional)")
             return False
         
         return True
     
     def _find_maya_versions(self):
-        """Find all installed Maya versions"""
         if not os.path.exists(self.maya_docs):
             return []
         
         versions = []
         for name in os.listdir(self.maya_docs):
-            # Check if it's a year (2018-2025)
             if name.isdigit() and 2018 <= int(name) <= 2025:
                 maya_dir = os.path.join(self.maya_docs, name)
                 if os.path.isdir(maya_dir):
@@ -108,8 +100,30 @@ class DemBonesInstaller:
         
         return sorted(versions)
     
+    def _find_plugin_for_version(self, version):
+        if not os.path.exists(self.plugins_dir):
+            return None
+        
+        exact_match = "DemBones_maya" + version + ".mll"
+        exact_path = os.path.join(self.plugins_dir, exact_match)
+        
+        if os.path.exists(exact_path):
+            return exact_path
+        
+        alt_match = "DemBones_" + version + ".mll"
+        alt_path = os.path.join(self.plugins_dir, alt_match)
+        
+        if os.path.exists(alt_path):
+            return alt_path
+        
+        generic_path = os.path.join(self.plugins_dir, "DemBones.mll")
+        if os.path.exists(generic_path):
+            print("  ℹ Using generic DemBones.mll")
+            return generic_path
+        
+        return None
+    
     def _install_for_version(self, version):
-        """Install for specific Maya version"""
         print("\n--- Installing for Maya " + version + " ---")
         
         version_dir = os.path.join(self.maya_docs, version)
@@ -117,37 +131,25 @@ class DemBonesInstaller:
         scripts_dir = os.path.join(version_dir, "scripts")
         icons_dir = os.path.join(version_dir, "prefs", "icons")
         
-        # Create directories if they don't exist
         os.makedirs(plug_dir, exist_ok=True)
         os.makedirs(scripts_dir, exist_ok=True)
         os.makedirs(icons_dir, exist_ok=True)
         
-        # Copy plugin
-        plugin_dest = os.path.join(plug_dir, self.PLUGIN_NAME)
-        try:
-            shutil.copy2(self.plugin_source, plugin_dest)
-            print("  ✓ Plugin copied to: " + plug_dir)
-            cmds.loadPlugin("DemBones.mll", quiet=True)
-            cmds.pluginInfo("DemBones.mll", edit=True, autoload=True)
-            
-        except Exception as e:
-            print("  ✗ Failed to copy plugin: " + str(e))
-
-        plugin_dir = os.path.dirname(plugin_dest)
-        if os.path.exists(plugin_dest):
-            try:
-                cmds.pluginInfo(addPluginPath=plugin_dir)
-                cmds.loadPlugin(plugin_dest, quiet=False)
-                cmds.pluginInfo(plugin_dest, edit=True, autoload=True)
-                print("  ✓ Plugin loaded and set to auto-load")
-            except Exception as e:
-                print("  ✗ Failed to load or set autoload: " + str(e))
-
+        plugin_source = self._find_plugin_for_version(version)
         
-        # Copy tool folder
+        if plugin_source:
+            plugin_dest = os.path.join(plug_dir, self.PLUGIN_NAME)
+            try:
+                shutil.copy2(plugin_source, plugin_dest)
+                print("  ✓ Plugin copied: " + os.path.basename(plugin_source))
+                print("    → " + plugin_dest)
+            except Exception as e:
+                print("  ✗ Failed to copy plugin: " + str(e))
+        else:
+            print("  ⚠ No plugin found for Maya " + version)
+        
         tool_dest = os.path.join(scripts_dir, self.TOOL_NAME)
         try:
-            # Remove existing installation
             if os.path.exists(tool_dest):
                 shutil.rmtree(tool_dest)
             
@@ -156,7 +158,6 @@ class DemBonesInstaller:
         except Exception as e:
             print("  ✗ Failed to copy tool: " + str(e))
         
-        # Copy icon
         if os.path.exists(self.icon_source):
             icon_dest = os.path.join(icons_dir, self.ICON_NAME)
             try:
@@ -166,49 +167,37 @@ class DemBonesInstaller:
                 print("  ✗ Failed to copy icon: " + str(e))
     
     def _create_shelf_button(self):
-        """Create shelf button in current Maya session"""
         print("\n--- Creating Shelf Button ---")
         
         try:
-            # Get or create shelf
             top_level_shelf = mel.eval('$tempVar = $gShelfTopLevel')
             
-            # Delete shelf if exists
             if cmds.shelfLayout(self.SHELF_NAME, exists=True, query=True):
                 cmds.deleteUI(self.SHELF_NAME, layout=True)
             
-            # Create new shelf
-            shelf = cmds.shelfLayout(
-                self.SHELF_NAME,
-                parent=top_level_shelf
-            )
+            shelf = cmds.shelfLayout(self.SHELF_NAME, parent=top_level_shelf)
             
-            # Command to run
             command = '''import sys
 import importlib
 
-# Add to path if needed
 scripts_dir = cmds.internalVar(userScriptDir=True)
 tool_path = os.path.join(scripts_dir, 'dembones_maya_tool')
 if tool_path not in sys.path:
     sys.path.insert(0, scripts_dir)
 
-# Import and run
 import dembones_maya_tool
 importlib.reload(dembones_maya_tool)
 dembones_maya_tool.show_ui()
 '''
             
-            # Determine icon path
-            icon_path = "commandButton.png"  # Default
+            icon_path = "commandButton.png"
             prefs_icons = os.path.join(cmds.internalVar(userPrefDir=True), "icons", self.ICON_NAME)
             if os.path.exists(prefs_icons):
                 icon_path = prefs_icons
                 print("  ✓ Using custom icon: " + self.ICON_NAME)
             else:
-                print("  ℹ Using default icon (custom icon not found)")
+                print("  ℹ Using default icon")
             
-            # Create shelf button
             cmds.shelfButton(
                 parent=shelf,
                 label="DemBones",
@@ -221,7 +210,6 @@ dembones_maya_tool.show_ui()
             
             print("  ✓ Shelf '" + self.SHELF_NAME + "' created with button")
             
-            # Save shelf
             try:
                 mel.eval('saveAllShelves $gShelfTopLevel')
                 print("  ✓ Shelf saved")
@@ -230,31 +218,50 @@ dembones_maya_tool.show_ui()
             
         except Exception as e:
             print("  ✗ Failed to create shelf button: " + str(e))
-
+    
+    def _load_plugin_in_current_session(self):
+        print("\n--- Loading Plugin in Current Session ---")
         
-    def _refresh_ui(self):
-        """Force Maya UI refresh"""
-        print("\n--- Refreshing Maya UI ---")
         try:
-            cmds.refresh(force=True)
-            mel.eval("buildNewShelfTab $gShelfTopLevel;")  # rebuild shelf area
-            mel.eval("restorePanelState all;")
-            print("  ✓ UI refreshed successfully")
-        except Exception as e:
-            print("  ℹ UI refresh skipped: " + str(e))
+            maya_version = cmds.about(version=True)
+            current_plug_dir = os.path.join(self.maya_docs, maya_version, "plug-ins")
+            current_plugin = os.path.join(current_plug_dir, self.PLUGIN_NAME)
             
+            if not os.path.exists(current_plugin):
+                print("  ⚠ Plugin not installed for Maya " + maya_version)
+                return
+            
+            try:
+                if cmds.pluginInfo(self.PLUGIN_NAME, query=True, loaded=True):
+                    print("  ℹ Plugin already loaded, reloading...")
+                    cmds.unloadPlugin(self.PLUGIN_NAME)
+                
+                cmds.loadPlugin(current_plugin)
+                print("  ✓ Plugin loaded: " + self.PLUGIN_NAME)
+                
+                cmds.pluginInfo(self.PLUGIN_NAME, edit=True, autoload=True)
+                print("  ✓ Auto-load enabled")
+                
+                commands = cmds.pluginInfo(self.PLUGIN_NAME, query=True, command=True)
+                if commands:
+                    print("  ✓ Available commands: " + str(commands))
+                else:
+                    print("  ⚠ No commands found in plugin")
+                    
+            except Exception as e:
+                print("  ✗ Failed to load plugin: " + str(e))
+                
+        except Exception as e:
+            print("  ✗ Error: " + str(e))
+
+
 def install():
-    """Run installation"""
     installer = DemBonesInstaller()
     installer.install()
 
 
 def onMayaDroppedPythonFile(*args):
-    """Called when file is dragged into Maya viewport"""
     install()
-    cmds.pluginInfo("DemBones.mll", edit=True, autoload=True)
-    cmds.loadPlugin("DemBones.mll", quiet=True)
-            
 
 
 if __name__ == "__main__":
