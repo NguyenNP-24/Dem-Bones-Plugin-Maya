@@ -1,7 +1,7 @@
 """
 User Interface for Dem Bones Maya Tool
 """
-import maya.cmds as cmds
+import maya.cmds as cmds # type: ignore
 from . import controller
 from . import utils
 
@@ -167,13 +167,13 @@ class DemBonesUI:
             label="GENERATE BONES",
             height=50,
             backgroundColor=[0.3, 0.7, 0.3],
-            command=self._on_generate_button_clicked
+            command=self._on_generate_button_clicked    
         )
         
         cmds.button(
-            label="Close",
-            height=50,
-            command=self._on_close_button_clicked
+            label="DUPLICATE MESH",
+            height=45,
+            command=utils.duplicate_static_meshes
         )
         
         cmds.setParent('..')

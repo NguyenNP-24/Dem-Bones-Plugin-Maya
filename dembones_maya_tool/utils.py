@@ -1,7 +1,7 @@
 """
 Utility functions for Dem Bones Maya Tool
 """
-import maya.cmds as cmds
+import maya.cmds as cmds # type: ignore
 
 
 def get_short_name(full_path):
@@ -121,3 +121,26 @@ def load_dembones_plugin():
     except Exception as e:
         error_msg = "Failed to load DemBones plugin: {}".format(str(e))
         return (False, error_msg)
+
+def duplicate_static_meshes(*args):
+    """
+    Duplicate selected meshes as static copies at current frame.
+    """
+    sel = cmds.ls(sl=True, long=True)
+    if not sel:
+        cmds.warning("⚠️ No objects selected.")
+        return []
+
+    current_frame = cmds.currentTime(q=True)
+    static_meshes = []
+
+    for obj in sel:
+        dup = cmds.duplicate(obj, name=f"{obj.split('|')[-1]}_static")[0]
+        cmds.currentTime(current_frame)
+        cmds.makeIdentity(dup, apply=True, t=1, r=1, s=1, n=0)
+        cmds.delete(dup, ch=True)
+        static_meshes.append(dup)
+
+    cmds.select(static_meshes, r=True)
+    print(f"✅ Created {len(static_meshes)} static meshes at frame {int(current_frame)}.")
+    return static_meshes
