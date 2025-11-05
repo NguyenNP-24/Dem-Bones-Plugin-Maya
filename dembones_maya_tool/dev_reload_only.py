@@ -1,6 +1,6 @@
 """
 Reload Dem Bones Tool in Maya
-Copy and paste this code into Maya Script Editor (Python tab)
+Copy and paste this code into Maya Script Editor
 """
 
 import sys
