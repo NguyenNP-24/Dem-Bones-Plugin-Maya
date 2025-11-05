@@ -2,7 +2,7 @@
 Dem Bones Maya Tool
 A tool for automatic rigging using Dem Bones algorithm
 
-Author: Your Name
+Author: Nguyen Phuc Nguyen
 Version: 1.0.0
 """
 
