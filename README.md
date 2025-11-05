@@ -3,12 +3,12 @@
 A **Maya plugin** that converts any **mesh or simulation animation** into clean **joint-based animation** using the **DemBones** algorithm — integrated from the open-source project [DemBones by Electronic Arts](https://github.com/electronicarts/dem-bones).
 
 Supports **Maya 2020–2025**  
-Build your own `.mll` or use the precompiled version for native integration directly in Maya.
+Build your own `.mll` version for native integration directly in Maya.
 
 Perfect for converting:
-- 🌀 **Alembic caches**  
-- 💠 **Blendshapes**  
-- 🌊 **Simulation meshes**  
+- **Alembic caches**  
+- **Blendshapes**  
+- **Simulation meshes**  
 
 …into **optimized skinned animation** ready for **game engines**.
 
