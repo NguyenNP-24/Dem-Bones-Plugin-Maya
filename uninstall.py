@@ -2,7 +2,7 @@
 DemBones Maya Tool Uninstaller
 -------------------------------
 Drag this file into Maya viewport to uninstall.
-Removes tool from ALL Maya versions (2018–2025)
+Removes tool from ALL Maya versions (2020–2025)
 """
 
 import os
