@@ -2,7 +2,7 @@
 DemBones Maya Tool Installer
 -----------------------------
 Drag this file into Maya viewport to install.
-Installs for ALL Maya versions (2018-2025)
+Installs for ALL Maya versions (2020-2025) - auto detection
 """
 
 import os
