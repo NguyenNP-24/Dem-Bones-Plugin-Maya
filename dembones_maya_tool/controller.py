@@ -1,5 +1,5 @@
 """
-Controller/Business logic for Dem Bones Maya Tool
+Controller/Business logic for  Dem Bones Maya Tool
 """
 import maya.cmds as cmds
 from . import utils
