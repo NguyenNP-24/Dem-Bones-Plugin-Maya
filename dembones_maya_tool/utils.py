@@ -21,6 +21,17 @@ def get_selected_mesh():
     return (True, selection[0], "Mesh selected successfully")
 
 
+def get_selected_meshes():
+    """Return list of full paths for all selected mesh transforms (skips non-meshes)."""
+    selection = cmds.ls(selection=True, type='transform', long=True)
+    meshes = []
+    for obj in selection:
+        shapes = cmds.listRelatives(obj, shapes=True, type='mesh')
+        if shapes:
+            meshes.append(obj)
+    return meshes
+
+
 def check_topology_match(mesh1, mesh2):
     try:
         vtx1  = cmds.polyEvaluate(mesh1, vertex=True)

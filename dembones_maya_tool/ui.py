@@ -355,6 +355,19 @@ class DemBonesUI:
         return cmd
 
     def _on_add_sim_clicked(self, *args):
+        selected = utils.get_selected_meshes()
+        if selected:
+            start, end = utils.get_timeline_range()
+            for mesh_path in selected:
+                self._add_sim_row(
+                    mesh_name=utils.get_short_name(mesh_path),
+                    start=start, end=end
+                )
+            self._show_success("Added {} simulation(s) from selection".format(len(selected)))
+        else:
+            self._add_sim_row()
+
+    def _add_sim_row(self, mesh_name="", start=1, end=100):
         cmds.setParent(self.widgets['sim_column'])
         idx = len(self._sim_rows)
         row_layout = cmds.rowLayout(
@@ -364,19 +377,20 @@ class DemBonesUI:
         )
 
         mesh_field = cmds.textField(
+            text=mesh_name,
             placeholderText="sim mesh {}".format(idx + 1),
             annotation="Animated simulation mesh for this clip (same topology as bind pose)."
         )
         clip_field = cmds.textField(
-            text="anim_{}".format(idx + 1), width=70,
+            text=mesh_name or "anim_{}".format(idx + 1), width=70,
             annotation="Clip name — used in the frame-range summary after generation."
         )
         start_field = cmds.intField(
-            value=1, minValue=-10000, maxValue=10000,
+            value=start, minValue=-10000, maxValue=10000,
             annotation="First frame of this simulation's source animation."
         )
         end_field = cmds.intField(
-            value=100, minValue=-10000, maxValue=10000,
+            value=end, minValue=-10000, maxValue=10000,
             annotation="Last frame of this simulation's source animation."
         )
         cmds.button(
