@@ -1,0 +1,23 @@
+# Third-party libraries not bundled in this repo
+eigen-3.4.0/
+pybind11/
+
+# dem-bones: exclude precompiled binaries and large test data
+dem-bones/bin/
+dem-bones/python/
+dem-bones/build/
+dem-bones/data/
+dem-bones/.git/
+
+# maya-plugins build artifacts
+maya-plugins/build/
+maya-plugins/build_2020/
+
+# General
+*.mll
+*.obj
+*.lib
+*.exp
+*.pdb
+CMakeCache.txt
+CMakeFiles/
