@@ -13,32 +13,17 @@ Perfect for converting:
 
 ---
 
-## ✨ What's New
-
-The plugin now has **two modes** and several new features since the original release:
-
-| Feature | Description |
-|---------|-------------|
-| **Shared Skeleton Mode** | Combine multiple simulation clips into a single shared skeleton — ideal for exporting animation clips to a game engine |
-| **Auto Bind Pose** | Bind pose is created automatically from the start frame — no manual duplication needed |
-| **Custom Root Parent** | Parent the generated skeleton under any existing scene object (joint, group, locator, etc.) |
-| **Use Timeline button** | Auto-fill frame range from Maya's current playback range |
-| **Duplicate Mesh (static)** | Quick helper to snapshot any animated mesh as a static bind pose |
-| **Alembic retime fix** | Correctly handles Alembic caches that have frozen/offset frame timing |
-
----
-
 ## 🔀 Modes
 
 ### Single Mode
 One simulation mesh → one new skeleton + skin cluster.
 
-The bind pose is **automatically duplicated from the start frame** — just select your sim mesh, set the frame range, and hit **Generate Bones**.
+Select your sim mesh, set the frame range, and hit **Generate Bones**. The bind pose is automatically duplicated from the start frame — no manual setup needed.
 
 ### Shared Skeleton Mode
 Multiple simulation meshes (same topology) → one shared skeleton.
 
-Each simulation becomes a **separate animation clip** laid out consecutively on the same rig — ready to export as individual clips to a game engine. All meshes must share the same vertex count as the bind pose target.
+Each simulation becomes a **separate animation clip** laid out consecutively on the same rig, ready to export as individual clips to a game engine. All meshes must share the same vertex count as the bind pose target.
 
 <img width="100%" alt="Multiple simulations baked into one shared rig" src="MultipleSimToOneRig.gif" />
 
@@ -48,11 +33,11 @@ Each simulation becomes a **separate animation clip** laid out consecutively on 
 
 | Parameter | Description |
 |-----------|-------------|
-| **Quality** | Global Iterations — controls optimization accuracy. Draft: `20` · Good: `50` · Best: `100+` |
+| **Quality** | Controls optimization accuracy (Global Iterations). Draft: `20` · Good: `50` · Best: `100+` |
 | **Num Bones** | Number of bones to generate. More bones = finer deformation but heavier rig. Typical range: `8`–`64` |
-| **Custom Root Parent** | When enabled, the generated root joint is parented under the selected scene object instead of world origin |
+| **Custom Root Parent** | Parent the generated skeleton under any existing scene object (joint, group, locator, etc.) instead of world origin |
 
-Higher bone count captures more detail at the cost of runtime performance. The comparison below shows 12, 50, and 150 bones against the original Alembic:
+Higher bone count captures more detail at the cost of runtime performance:
 
 <img width="100%" alt="Comparison of 12 / 50 / 150 bones vs original Alembic" src="NumberBonesComparision.gif" />
 
