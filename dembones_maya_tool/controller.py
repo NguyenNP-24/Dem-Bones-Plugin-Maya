@@ -66,14 +66,6 @@ class DemBonesController:
             return (True, full_path, short_name, "Source mesh set: " + short_name)
         return (False, None, None, message)
 
-    def set_target_mesh_from_selection(self):
-        success, full_path, message = utils.get_selected_mesh()
-        if success:
-            self.target_mesh = full_path
-            short_name = utils.get_short_name(full_path)
-            return (True, full_path, short_name, "Bind pose set: " + short_name)
-        return (False, None, None, message)
-
     def validate_single(self, start_frame, end_frame, global_iters, num_bones):
         errors = []
         errors.extend(validator.DemBonesValidator.validate_mesh(
@@ -123,7 +115,7 @@ class DemBonesController:
         except Exception as e:
             return (False, "Error running Dem Bones: {}".format(str(e)))
 
-    def run_dembones_shared_skeleton(self, sim_entries, target_mesh,
+    def run_dembones_shared_skeleton(self, sim_entries,
                                      global_iters, num_bones, root_parent=None):
         """
         Generate a shared skeleton from multiple simulations.
@@ -133,10 +125,11 @@ class DemBonesController:
         Result: one skeleton + one skinCluster, with each simulation occupying
         a distinct frame range (suitable for game-engine clip export).
 
+        Bind pose is auto-created by duplicating the first sim mesh at its start frame.
+
         Args:
             sim_entries: list of (mesh_path, src_start, src_end, clip_name)
-            target_mesh: bind-pose mesh (same topology as all sims)
-            global_iters, local_iters, num_bones: DemBones parameters
+            global_iters, num_bones: DemBones parameters
 
         Returns:
             tuple: (success, message)
@@ -149,10 +142,18 @@ class DemBonesController:
         if err:
             return (False, err)
 
-        is_valid, errors = validator.DemBonesValidator.validate_sim_list(
-            sim_entries, target_mesh)
+        is_valid, errors = validator.DemBonesValidator.validate_sim_list(sim_entries)
         if not is_valid:
             return (False, "Validation failed:\n" + "\n".join("- " + e for e in errors))
+
+        # Auto-create bind pose from first sim at its start frame
+        first_mesh, first_start, _, _ = sim_entries[0]
+        cmds.currentTime(first_start)
+        first_short = utils.get_short_name(first_mesh)
+        target_mesh = cmds.duplicate(first_mesh, name=first_short + "_bindPose")[0]
+        cmds.delete(target_mesh, constructionHistory=True)
+        print("  [OK] Bind pose created: '{}' (from '{}' frame {})".format(
+            target_mesh, first_short, first_start))
 
         # Build dst frame ranges — each sim is laid out consecutively starting at frame 1
         full_entries = []

@@ -82,11 +82,10 @@ class DemBonesUI:
         self.widgets['shared_section'] = cmds.columnLayout(
             adjustableColumn=True, rowSpacing=6, visible=False)
 
-        self._create_mesh_section(
-            "Bind Pose Mesh (Target):", 'shared_target_field',
-            self._on_shared_target_clicked,
-            field_tip="Static bind-pose mesh shared by all simulations (same topology).",
-            btn_tip="Select the bind-pose mesh in the viewport, then click here."
+        cmds.text(
+            label="Bind pose is auto-created from the first simulation at its start frame.",
+            align='left',
+            font='smallObliqueLabelFont'
         )
 
         cmds.separator(height=4, style='in')
@@ -440,15 +439,6 @@ class DemBonesUI:
         else:
             self._show_error(message)
 
-    def _on_shared_target_clicked(self, *args):
-        success, full_path, short_name, message = \
-            self.controller.set_target_mesh_from_selection()
-        if success:
-            cmds.textField(self.widgets['shared_target_field'], edit=True, text=short_name)
-            self._show_success("Bind pose set: " + short_name)
-        else:
-            self._show_error(message)
-
     def _on_timeline_button_clicked(self, *args):
         start, end = utils.get_timeline_range()
         cmds.intField(self.widgets['start_frame'], edit=True, value=start)
@@ -504,15 +494,6 @@ class DemBonesUI:
             self._show_error("No simulations added. Click '+ Add Simulation' first.")
             return
 
-        target_name = cmds.textField(
-            self.widgets['shared_target_field'], query=True, text=True)
-        if not target_name:
-            self._show_error("Bind pose mesh not set.")
-            return
-
-        matches    = cmds.ls(target_name, long=True)
-        target_full = matches[0] if matches else target_name
-
         sim_entries = []
         for row in self._sim_rows:
             mesh_name = cmds.textField(row['mesh'],  query=True, text=True)
@@ -532,7 +513,7 @@ class DemBonesUI:
         cmds.refresh(force=True)
 
         success, message = self.controller.run_dembones_shared_skeleton(
-            sim_entries, target_full, global_iters, num_bones,
+            sim_entries, global_iters, num_bones,
             root_parent=self._get_root_parent())
 
         self._finish(success, message)

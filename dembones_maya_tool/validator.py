@@ -63,13 +63,14 @@ class DemBonesValidator:
         return None
 
     @staticmethod
-    def validate_sim_list(sim_entries, target_mesh):
+    def validate_sim_list(sim_entries):
         """
         Validate a list of simulation entries for Shared Skeleton mode.
+        All sims must share the same vertex count (bind pose is auto-created
+        from the first sim's start frame).
 
         Args:
             sim_entries: list of (mesh_path, src_start, src_end, clip_name)
-            target_mesh: bind-pose mesh path
 
         Returns:
             tuple: (is_valid, error_list)
@@ -79,12 +80,8 @@ class DemBonesValidator:
         if len(sim_entries) < 2:
             errors.append("Shared Skeleton mode requires at least 2 simulations")
 
-        errors.extend(DemBonesValidator.validate_mesh(target_mesh, "Bind pose mesh"))
-
-        target_vtx = None
-        if target_mesh and cmds.objExists(target_mesh):
-            target_vtx = cmds.polyEvaluate(target_mesh, vertex=True)
-
+        ref_vtx  = None
+        ref_name = None
         for i, entry in enumerate(sim_entries):
             mesh_path, src_start, src_end, clip_name = entry
             label = "Sim {} ({})".format(i + 1, clip_name or mesh_path)
@@ -95,10 +92,14 @@ class DemBonesValidator:
             if not mesh_errors and src_start >= src_end:
                 errors.append("{}: start frame must be less than end frame".format(label))
 
-            if not mesh_errors and target_vtx is not None and cmds.objExists(mesh_path):
+            if not mesh_errors and cmds.objExists(mesh_path):
                 vtx = cmds.polyEvaluate(mesh_path, vertex=True)
-                if vtx != target_vtx:
-                    errors.append("{}: vertex count ({}) does not match bind pose ({})".format(
-                        label, vtx, target_vtx))
+                if ref_vtx is None:
+                    ref_vtx  = vtx
+                    ref_name = label
+                elif vtx != ref_vtx:
+                    errors.append(
+                        "{}: vertex count ({}) does not match {} ({})".format(
+                            label, vtx, ref_name, ref_vtx))
 
         return (len(errors) == 0, errors)
