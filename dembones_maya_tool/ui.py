@@ -109,6 +109,12 @@ class DemBonesUI:
         cmds.setParent('..')  # end sim_column
         cmds.setParent('..')  # end sim_scroll
 
+        cmds.rowLayout(
+            numberOfColumns=2,
+            columnWidth2=(260, 220),
+            adjustableColumn=1,
+            columnAttach=[(1, 'both', 0), (2, 'both', 4)]
+        )
         cmds.button(
             label="+ Add Simulation",
             height=26,
@@ -119,6 +125,13 @@ class DemBonesUI:
                 "Set the mesh, clip name, and source frame range for each simulation."
             )
         )
+        cmds.button(
+            label="Use Timeline (all)",
+            height=26,
+            command=self._on_shared_timeline_clicked,
+            annotation="Apply Maya's current playback range to all simulation rows at once."
+        )
+        cmds.setParent('..')  # end button row
 
         cmds.setParent('..')  # end shared_section
 
@@ -444,6 +457,16 @@ class DemBonesUI:
         cmds.intField(self.widgets['start_frame'], edit=True, value=start)
         cmds.intField(self.widgets['end_frame'], edit=True, value=end)
         self._show_success("Frame range set: {} - {}".format(start, end))
+
+    def _on_shared_timeline_clicked(self, *args):
+        if not self._sim_rows:
+            self._show_error("No simulations added yet.")
+            return
+        start, end = utils.get_timeline_range()
+        for row in self._sim_rows:
+            cmds.intField(row['start'], edit=True, value=start)
+            cmds.intField(row['end'],   edit=True, value=end)
+        self._show_success("All simulations set to: {} - {}".format(start, end))
 
     def _get_root_parent(self):
         """Return the resolved full path of the custom root parent, or None."""
