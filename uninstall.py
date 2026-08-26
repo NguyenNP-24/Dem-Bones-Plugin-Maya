@@ -1,176 +1,131 @@
+# -*- coding: utf-8 -*-
 """
 DemBones Maya Tool Uninstaller
--------------------------------
 Drag this file into Maya viewport to uninstall.
-Removes tool from ALL Maya versions (2020–2025)
 """
-
 import os
+import sys
 import shutil
-import maya.cmds as cmds # type: ignore
-import maya.mel as mel # type: ignore
+import maya.cmds as cmds
+import maya.mel as mel
 
 
-class DemBonesUninstaller:
-    
-    TOOL_NAME = "dembones_maya_tool"
-    PLUGIN_NAME = "DemBones.mll"
-    SHELF_NAME = "DemBones"
-    
-    def __init__(self):
-        self.maya_docs = os.path.expanduser("~/Documents/maya")
-    
-    def uninstall(self):
-        """Run complete uninstallation"""
-        print("\n" + "=" * 70)
-        print("  DEM BONES MAYA TOOL - UNINSTALLER")
-        print("=" * 70)
-        
-        versions = self._find_maya_versions()
-        if not versions:
-            print("\n[WARNING] No Maya versions found in: " + self.maya_docs)
-        else:
-            print("\nFound Maya versions: " + ", ".join(versions))
-            for version in versions:
-                self._uninstall_for_version(version)
-        
-        self._remove_shelf()
-        self._unload_plugin()
-        self._refresh_ui()
+TOOL_NAME    = "dembones_maya_tool"
+PLUGIN_NAME  = "DemBones.mll"
+PLUGIN_SHORT = "DemBones"
+SHELF_NAME   = "CustomTools"
+ICON_NAME    = "icon.png"
 
-        print("\n" + "=" * 70)
-        print("  ✅ UNINSTALLATION COMPLETED SUCCESSFULLY!")
-        print("=" * 70 + "\n")
-        
-        return True
-    
-    # ---------------------------------------------------------
-    def _find_maya_versions(self):
-        if not os.path.exists(self.maya_docs):
-            return []
-        
-        versions = []
-        for name in os.listdir(self.maya_docs):
-            if name.isdigit() and 2018 <= int(name) <= 2025:
-                path = os.path.join(self.maya_docs, name)
-                if os.path.isdir(path):
-                    versions.append(name)
-        return sorted(versions)
-    
-    # ---------------------------------------------------------
-    def _uninstall_for_version(self, version):
-        print("\n--- Uninstalling from Maya " + version + " ---")
-        
-        version_dir = os.path.join(self.maya_docs, version)
-        plug_dir = os.path.join(version_dir, "plug-ins")
-        scripts_dir = os.path.join(version_dir, "scripts")
-        shelf_dir = os.path.join(version_dir, "prefs", "shelves")
-        icons_dir = os.path.join(version_dir, "prefs", "icons")
-        
-        removed_items = []
-        
-        # Remove plugin
-        plugin_path = os.path.join(plug_dir, self.PLUGIN_NAME)
-        if os.path.exists(plugin_path):
-            try:
-                os.remove(plugin_path)
-                removed_items.append("Plugin")
-            except PermissionError:
-                print("  ✗ Permission denied removing plugin. Try running Maya as Administrator.")
-            except Exception as e:
-                print("  ✗ Failed to remove plugin: " + str(e))
-        
-        # Remove tool folder
-        tool_path = os.path.join(scripts_dir, self.TOOL_NAME)
-        if os.path.exists(tool_path):
-            try:
-                shutil.rmtree(tool_path)
-                removed_items.append("Tool folder")
-            except PermissionError:
-                print("  ✗ Permission denied removing tool folder. Try running Maya as Administrator.")
-            except Exception as e:
-                print("  ✗ Failed to remove tool folder: " + str(e))
-        
-        # Remove shelf file
-        shelf_file = os.path.join(shelf_dir, "shelf_" + self.SHELF_NAME + ".mel")
-        if os.path.exists(shelf_file):
-            try:
-                os.remove(shelf_file)
-                removed_items.append("Shelf file")
-            except PermissionError:
-                print("  ✗ Permission denied removing shelf file. Try running Maya as Administrator.")
-            except Exception as e:
-                print("  ✗ Failed to remove shelf file: " + str(e))
-        
-        # Remove custom icons
-        if os.path.exists(icons_dir):
-            for file in os.listdir(icons_dir):
-                if "dembones" in file.lower():
-                    try:
-                        os.remove(os.path.join(icons_dir, file))
-                        removed_items.append("Icon (" + file + ")")
-                    except Exception:
-                        pass
-        
-        if removed_items:
-            print("  ✓ Removed: " + ", ".join(removed_items))
-        else:
-            print("  ℹ Nothing to remove (already clean)")
-    
-    # ---------------------------------------------------------
-    def _remove_shelf(self):
-        print("\n--- Removing Shelf from Current Session ---")
-        
+
+def _get_paths():
+    scripts_dir = cmds.internalVar(userScriptDir=True)
+    prefs_dir   = cmds.internalVar(userPrefDir=True)
+    version_dir = os.path.dirname(scripts_dir.rstrip("/\\"))
+    return {
+        'scripts' : scripts_dir,
+        'plug_ins': os.path.join(version_dir, "plug-ins"),
+        'shelves' : os.path.join(prefs_dir, "shelves"),
+        'icons'   : os.path.join(prefs_dir, "icons"),
+    }
+
+
+def _remove_file(path):
+    if os.path.isfile(path):
         try:
-            if cmds.shelfLayout(self.SHELF_NAME, exists=True):
-                # remove buttons first
-                children = cmds.shelfLayout(self.SHELF_NAME, q=True, ca=True) or []
-                for c in children:
-                    try:
-                        cmds.deleteUI(c)
-                    except:
-                        pass
-                cmds.deleteUI(self.SHELF_NAME, layout=True)
-                print(f"  ✓ Shelf '{self.SHELF_NAME}' removed")
-                
-                try:
-                    mel.eval('saveAllShelves $gShelfTopLevel')
-                except:
-                    pass
-            else:
-                print("  ℹ Shelf not found in current session")
+            os.remove(path)
+            print("  [OK] Removed file: " + path)
+            return True
         except Exception as e:
-            print("  ✗ Failed to remove shelf: " + str(e))
-    
-    # ---------------------------------------------------------
-    def _unload_plugin(self):
-        print("\n--- Unloading Plugin from Current Session ---")
+            print("  [FAIL] " + path + " -> " + str(e))
+    return False
+
+
+def _remove_dir(path):
+    if os.path.isdir(path):
         try:
-            plugin_short = self.PLUGIN_NAME.replace(".mll", "")
-            if cmds.pluginInfo(plugin_short, q=True, loaded=True):
-                cmds.unloadPlugin(plugin_short)
-                print(f"  ✓ Plugin '{plugin_short}' unloaded")
-            else:
-                print("  ℹ Plugin not loaded in current session")
-        except Exception:
-            print("  ℹ Plugin not found or already unloaded")
-    
-    # ---------------------------------------------------------
-    def _refresh_ui(self):
-        """Force Maya UI refresh"""
-        print("\n--- Refreshing Maya UI ---")
-        try:
-            cmds.refresh(force=True)
-            mel.eval("buildNewShelfTab $gShelfTopLevel;")  # rebuild shelf area
-            mel.eval("restorePanelState all;")
-            print("  ✓ UI refreshed successfully")
+            shutil.rmtree(path)
+            print("  [OK] Removed folder: " + path)
+            return True
         except Exception as e:
-            print("  ℹ UI refresh skipped: " + str(e))
+            print("  [FAIL] " + path + " -> " + str(e))
+    return False
 
 
-# =============================================================
 def uninstall():
-    DemBonesUninstaller().uninstall()
+    print("\n" + "=" * 70)
+    print("  DEM BONES MAYA TOOL - UNINSTALLER")
+    print("=" * 70)
+
+    paths = _get_paths()
+
+    # 1. Disable autoload and unload plugin from session
+    print("\n--- Unloading Plugin ---")
+    try:
+        if cmds.pluginInfo(PLUGIN_SHORT, query=True, loaded=True):
+            cmds.pluginInfo(PLUGIN_SHORT, edit=True, autoload=False)
+            cmds.unloadPlugin(PLUGIN_SHORT, force=True)
+            print("  [OK] Plugin unloaded and autoload disabled")
+        else:
+            # Still disable autoload even if not loaded
+            try:
+                cmds.pluginInfo(PLUGIN_SHORT, edit=True, autoload=False)
+            except Exception:
+                pass
+            print("  [INFO] Plugin was not loaded")
+    except Exception as e:
+        print("  [INFO] " + str(e))
+
+    # 2. Clear Python module cache so stale imports can't persist
+    print("\n--- Clearing Module Cache ---")
+    removed_modules = []
+    for key in list(sys.modules.keys()):
+        if key == TOOL_NAME or key.startswith(TOOL_NAME + "."):
+            del sys.modules[key]
+            removed_modules.append(key)
+    if removed_modules:
+        print("  [OK] Cleared: " + ", ".join(removed_modules))
+    else:
+        print("  [INFO] No cached modules found")
+
+    # 3. Remove files from disk
+    print("\n--- Removing Files ---")
+    _remove_file(os.path.join(paths['plug_ins'], PLUGIN_NAME))
+    _remove_dir(os.path.join(paths['scripts'], TOOL_NAME))
+    _remove_file(os.path.join(paths['icons'], ICON_NAME))
+    _remove_file(os.path.join(paths['shelves'], "shelf_" + SHELF_NAME + ".mel"))
+
+    # 4. Remove shelf from live UI
+    print("\n--- Removing Shelf ---")
+    try:
+        if cmds.shelfLayout(SHELF_NAME, exists=True, query=True):
+            cmds.deleteUI(SHELF_NAME, layout=True)
+            print("  [OK] Shelf '" + SHELF_NAME + "' removed from UI")
+            try:
+                mel.eval('saveAllShelves $gShelfTopLevel')
+            except Exception:
+                pass
+        else:
+            print("  [INFO] Shelf not present in current session")
+    except Exception as e:
+        print("  [FAIL] " + str(e))
+
+    # 5. Refresh UI
+    try:
+        cmds.refresh(force=True)
+    except Exception:
+        pass
+
+    print("\n" + "=" * 70)
+    print("  [DONE] UNINSTALLATION COMPLETE")
+    print("=" * 70 + "\n")
+
+    cmds.confirmDialog(
+        title="DemBones Uninstalled",
+        message="DemBones Tool has been removed successfully.",
+        button=["OK"],
+        defaultButton="OK",
+        icon="information"
+    )
 
 
 def onMayaDroppedPythonFile(*args):
