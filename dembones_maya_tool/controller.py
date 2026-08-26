@@ -66,6 +66,14 @@ class DemBonesController:
             return (True, full_path, short_name, "Source mesh set: " + short_name)
         return (False, None, None, message)
 
+    def set_target_mesh_from_selection(self):
+        success, full_path, message = utils.get_selected_mesh()
+        if success:
+            self.target_mesh = full_path
+            short_name = utils.get_short_name(full_path)
+            return (True, full_path, short_name, "Bind pose set: " + short_name)
+        return (False, None, None, message)
+
     def validate_single(self, start_frame, end_frame, global_iters, num_bones):
         errors = []
         errors.extend(validator.DemBonesValidator.validate_mesh(
