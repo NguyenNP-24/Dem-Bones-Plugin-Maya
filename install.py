@@ -67,7 +67,7 @@ def install():
     installer_dir = os.path.dirname(__file__)
     plugins_dir   = os.path.join(installer_dir, PLUGINS_DIR)
     tool_source   = os.path.join(installer_dir, TOOL_NAME)
-    icon_source   = os.path.join(installer_dir, ICON_NAME)
+    icon_source   = os.path.join(installer_dir, TOOL_NAME, ICON_NAME)
 
     print("\n" + "=" * 70)
     print("  DEM BONES MAYA TOOL - INSTALLER")
